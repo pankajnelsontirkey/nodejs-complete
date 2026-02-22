@@ -18,7 +18,7 @@
   "author": "pankajnelsontirkey",
   "license": "MIT",
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.14"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
