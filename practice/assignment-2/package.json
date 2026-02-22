@@ -17,6 +17,6 @@
     "nodemon": "^3.1.9"
   },
   "dependencies": {
-    "express": "^4.22.0"
+    "express": "^4.22.1"
   }
 }
