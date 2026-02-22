@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
 const { createHandler } = require('graphql-http/lib/use/express');
+const { ruruHTML } = require('ruru/server');
 
 const { MONGODB_URL, PORT } = require('./utils/constants');
 
@@ -55,6 +56,11 @@ app.use(
     rootValue: graphqlResolver
   })
 );
+
+app.get('/', (_req, res) => {
+  res.type('html');
+  res.end(ruruHTML({ endpoint: '/graphql' }));
+});
 
 app.use((error, req, res, next) => {
   console.log(error);
