@@ -1,7 +1,9 @@
-const { hash } = require('bcryptjs');
+const { hash, compare } = require('bcryptjs');
 const { isEmail, isEmpty, isLength } = require('validator');
+const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
+const { JWT_SECRET } = require('../utils/constants');
 
 module.exports = {
   createUser: async ({ userInput }, req) => {
@@ -36,5 +38,29 @@ module.exports = {
     const createduser = await user.save();
 
     return { ...createduser._doc, _id: createduser._id.toString() };
+  },
+  login: async ({ email, password }, req) => {
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      const error = new Error('User not found!');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const isEqual = await compare(password, user.password);
+
+    if (!isEqual) {
+      const error = new Error('Password is incorrect!');
+      error.statusCode = 401;
+      throw error;
+    }
+
+    const userId = user._id.toString();
+    const token = jwt.sign({ email: user.email, userId }, `${JWT_SECRET}`, {
+      expiresIn: '1h'
+    });
+
+    return { token, userId };
   }
 };
