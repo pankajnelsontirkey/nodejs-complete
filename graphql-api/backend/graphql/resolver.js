@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const Post = require('../models/post');
 const { JWT_SECRET } = require('../utils/constants');
+const { PAGE_SIZE } = require('../../frontend/src/util/constants');
 
 module.exports = {
   createUser: async ({ userInput }, _context) => {
@@ -91,15 +92,10 @@ module.exports = {
     }
 
     const user = await User.findById(userId);
-    if (!user) {
-      const error = new Error('User not found!');
-      error.code = 401;
-      throw error;
-    }
 
     const post = new Post({ title, content, imageUrl, creator: user });
-
     const createdPost = await post.save();
+
     user.posts.push(createdPost);
     await user.save();
 
@@ -110,7 +106,7 @@ module.exports = {
       updatedAt: createdPost.updatedAt.toISOString()
     };
   },
-  posts: async (_args, { req }) => {
+  posts: async ({ page }, { req }) => {
     const { isAuth, userId } = req;
 
     if (!isAuth) {
@@ -121,9 +117,9 @@ module.exports = {
 
     const totalPosts = await Post.find().countDocuments();
     const posts = await Post.find()
-      .skip()
-      .limit()
       .sort({ createdAt: -1 })
+      .skip(PAGE_SIZE * (page - 1))
+      .limit(PAGE_SIZE)
       .populate('creator');
 
     return {
@@ -146,8 +142,58 @@ module.exports = {
     }
 
     const user = await User.findById(userId).select('status');
-    console.log('🚀 ~ resolver.js:149 ~ user:', user);
 
     return user.status;
+  },
+  updateStatus: async ({ statusText }, { req }) => {
+    const { isAuth, userId } = req;
+
+    if (!isAuth) {
+      const error = new Error('Not authenticated.');
+      error.code = 401;
+      throw error;
+    }
+
+    const errors = [];
+
+    if (isEmpty(statusText) || !isLength(statusText, { min: 6 })) {
+      errors.push('Text missing or invalid.');
+    }
+
+    if (errors.length > 0) {
+      const error = new Error('Invalid status');
+      error.data = errors;
+      error.code = 422;
+      throw error;
+    }
+
+    const user = await User.findById(userId);
+    user.status = statusText;
+    await user.save();
+    return user.status;
+  },
+  getPost: async ({ postId }, { req }) => {
+    const { isAuth, userId } = req;
+
+    if (!isAuth) {
+      const error = new Error('Not authenticated.');
+      error.code = 401;
+      throw error;
+    }
+
+    const post = await Post.findById(postId).populate('creator');
+
+    if (!post) {
+      const error = new Error('Post not found');
+      error.code = 404;
+      throw error;
+    }
+
+    return {
+      ...post._doc,
+      _id: post._id.toString(),
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString()
+    };
   }
 };
