@@ -10,6 +10,7 @@ const { MONGODB_URL, PORT } = require('./utils/constants');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolver');
+const auth = require('./middleware/auth.js');
 
 const app = express();
 
@@ -52,11 +53,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.all(
-  '/graphql',
+app.use(auth);
+
+app.all('/graphql', (req, res) =>
   createHandler({
     schema: graphqlSchema,
     rootValue: graphqlResolver,
+    context: { req, res },
     formatError(err) {
       if (!err.originalError) {
         return err;
@@ -67,7 +70,7 @@ app.all(
 
       return { message, status: code, data };
     }
-  })
+  })(req, res)
 );
 
 app.get('/', (_req, res) => {
