@@ -13,24 +13,37 @@ class SinglePost extends Component {
     content: ''
   };
 
+  url = `${REACT_APP_API_HOST}/graphql`;
+  method = 'POST';
+
   componentDidMount() {
     const postId = this.props.match.params.postId;
-    fetch(`${REACT_APP_API_HOST}/feed/post/${postId}`, {
-      headers: { Authorization: `Bearer ${this.props.token}` }
+    const graphqlQuery = {
+      query: `{ getPost(postId: "${postId}") { _id title content imageUrl creator { _id name } createdAt updatedAt } }`
+    };
+
+    fetch(this.url, {
+      method: this.method,
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(graphqlQuery)
     })
-      .then((res) => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch status');
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((resData) => {
+        if (resData?.errors?.length) {
+          throw new Error(resData.errors[0].message);
+        }
+        const {
+          data: { getPost: post }
+        } = resData;
         this.setState({
-          title: resData.post.title,
-          author: resData.post.creator.name,
-          image: `${REACT_APP_API_HOST}/${resData.post.imageUrl}`,
-          date: new Date(resData.post.createdAt).toLocaleDateString('en-US'),
-          content: resData.post.content
+          title: post.title,
+          author: post.creator.name,
+          image: `${REACT_APP_API_HOST}/${post.imageUrl}`,
+          date: new Date(post.createdAt).toLocaleDateString('en-US'),
+          content: post.content
         });
       })
       .catch((err) => {
