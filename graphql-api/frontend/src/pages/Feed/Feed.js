@@ -23,17 +23,31 @@ class Feed extends Component {
   };
 
   componentDidMount() {
-    fetch(`${REACT_APP_API_HOST}/feed/status`, {
-      headers: { Authorization: `Bearer ${this.props.token}` }
+    const url = `${REACT_APP_API_HOST}/graphql`;
+    const method = 'POST';
+
+    const graphqlQuery = { query: `{ status }` };
+
+    fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(graphqlQuery)
     })
-      .then((res) => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch user status.');
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
+
       .then((resData) => {
-        this.setState({ status: resData.status });
+        if (resData?.errors?.length) {
+          throw new Error(resData.errors[0].message);
+        }
+
+        const {
+          data: { status }
+        } = resData;
+
+        this.setState({ status });
       })
       .catch(this.catchError);
 
@@ -60,22 +74,39 @@ class Feed extends Component {
       page--;
       this.setState({ postPage: page });
     }
-    fetch(`${REACT_APP_API_HOST}/feed/posts?page=${page}`, {
-      headers: { Authorization: `Bearer ${this.props.token}` }
+
+    const url = `${REACT_APP_API_HOST}/graphql`;
+    const method = 'POST';
+    const graphqlQuery = {
+      query: `query { posts { posts { _id title content creator { _id name } createdAt } totalPosts } }`
+    };
+
+    fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(graphqlQuery)
     })
-      .then((res) => {
-        if (res.status !== 200) {
-          throw new Error('Failed to fetch posts.');
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((resData) => {
+        if (resData?.errors?.length) {
+          throw new Error(resData.errors[0].message);
+        }
+
+        const {
+          data: {
+            posts: { posts, totalPosts }
+          }
+        } = resData;
+
         this.setState({
-          posts: resData.posts.map((post) => ({
+          posts: posts.map((post) => ({
             ...post,
             imagePath: post.imageUrl
           })),
-          totalPosts: resData.totalItems,
+          totalPosts,
           postsLoading: false
         });
       })
@@ -134,50 +165,52 @@ class Feed extends Component {
     formData.append('content', content);
     formData.append('image', image);
 
-    let url = `${REACT_APP_API_HOST}/feed/post`;
+    let url = `${REACT_APP_API_HOST}/graphql`;
     let method = 'POST';
 
-    if (this.state.editPost) {
-      url += `/${this.state.editPost._id}`;
-      method = 'PUT';
-    }
+    const graphqlQuery = {
+      query: `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "some-url"}) { _id title content imageUrl creator { name } createdAt } }`
+    };
 
     fetch(url, {
       method,
-      body: formData,
-      headers: { Authorization: `Bearer ${this.props.token}` }
+      body: JSON.stringify(graphqlQuery),
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json'
+      }
     })
-      .then((res) => {
-        if (res.status !== 200 && res.status !== 201) {
-          throw new Error('Creating or editing a post failed!');
-        }
-        return res.json();
-      })
+      .then((res) => res.json())
       .then((resData) => {
-        // const post = {
-        //   _id: resData.post._id,
-        //   title: resData.post.title,
-        //   content: resData.post.content,
-        //   creator: resData.post.creator,
-        //   createdAt: resData.post.createdAt
-        // };
-        this.setState((prevState) => {
-          // let updatedPosts = [...prevState.posts];
-          // if (prevState.editPost) {
-          //   const postIndex = prevState.posts.findIndex(
-          //     (p) => p._id === prevState.editPost._id
-          //   );
-          //   updatedPosts[postIndex] = post;
-          // } else if (prevState.posts.length < PAGE_SIZE) {
-          //   updatedPosts = prevState.posts.concat(post);
-          // }
-          return {
-            // posts: updatedPosts,
-            isEditing: false,
-            editPost: null,
-            editLoading: false
-          };
-        });
+        if (resData?.errors?.length) {
+          throw new Error(resData.errors[0].message);
+        }
+
+        const { data: createPost } = resData;
+        const post = {
+          _id: createPost.post._id,
+          title: createPost.post.title,
+          content: createPost.post.content,
+          creator: createPost.post.creator,
+          createdAt: createPost.post.createdAt
+        };
+        // this.setState((prevState) => {
+        //   let updatedPosts = [...prevState.posts];
+        //   if (prevState.editPost) {
+        //     const postIndex = prevState.posts.findIndex(
+        //       (p) => p._id === prevState.editPost._id
+        //     );
+        //     updatedPosts[postIndex] = post;
+        //   } else if (prevState.posts.length < PAGE_SIZE) {
+        //     updatedPosts = prevState.posts.concat(post);
+        //   }
+        //   return {
+        //     posts: updatedPosts,
+        //     isEditing: false,
+        //     editPost: null,
+        //     editLoading: false
+        //   };
+        // });
       })
       .catch((err) => {
         console.log(err);
