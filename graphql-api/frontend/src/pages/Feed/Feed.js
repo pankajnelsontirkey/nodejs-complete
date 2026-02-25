@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from 'react';
+import { Component, Fragment } from 'react';
 
 import Button from '../../components/Button/Button';
 import ErrorHandler from '../../components/ErrorHandler/ErrorHandler';
@@ -329,6 +329,7 @@ class Feed extends Component {
                   image={post.imageUrl}
                   content={post.content}
                   onStartEdit={this.startEditPostHandler.bind(this, post._id)}
+                  canEdit={this.props.userId === post.creator._id}
                   onDelete={this.deletePostHandler.bind(this, post._id)}
                 />
               ))}
