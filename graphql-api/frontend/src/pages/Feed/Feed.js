@@ -76,7 +76,7 @@ class Feed extends Component {
     }
 
     const graphqlQuery = {
-      query: `query { posts(page: ${page}) { posts { _id title content creator { _id name } createdAt } totalPosts } }`
+      query: `query { fetchPosts(page: ${page}) { posts { _id title content imageUrl creator { _id name } createdAt } totalPosts } }`
     };
 
     fetch(this.url, {
@@ -95,14 +95,14 @@ class Feed extends Component {
 
         const {
           data: {
-            posts: { posts, totalPosts }
+            fetchPosts: { posts, totalPosts }
           }
         } = resData;
 
         this.setState({
           posts: posts.map((post) => ({
             ...post,
-            imagePath: post.imageUrl
+            imageUrl: post.imageUrl
           })),
           totalPosts,
           postsLoading: false
@@ -167,23 +167,38 @@ class Feed extends Component {
       editLoading: true
     });
     const { title, content, image } = postData;
+
     const formData = new FormData();
-    formData.append('title', title);
-    formData.append('content', content);
     formData.append('image', image);
 
-    const graphqlQuery = {
-      query: `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "some-url"}) { _id title content imageUrl creator { name } createdAt } }`
-    };
+    if (this.state.editPost) {
+      formData.append('oldPath', this.state.editPost.imageUrl);
+    }
 
-    fetch(this.url, {
-      method: this.method,
-      body: JSON.stringify(graphqlQuery),
+    fetch(`${REACT_APP_API_HOST}/upload-image`, {
+      method: 'PUT',
       headers: {
-        Authorization: `Bearer ${this.props.token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${this.props.token}`
+      },
+      body: formData
     })
+      .then((res) => res.json())
+      .then(({ filePath }) => {
+        const imageUrl = filePath;
+
+        const graphqlQuery = {
+          query: `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) { _id title content imageUrl creator { name } createdAt } }`
+        };
+
+        return fetch(this.url, {
+          method: this.method,
+          body: JSON.stringify(graphqlQuery),
+          headers: {
+            Authorization: `Bearer ${this.props.token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      })
       .then((res) => res.json())
       .then((resData) => {
         if (resData?.errors?.length) {
@@ -196,6 +211,7 @@ class Feed extends Component {
         const post = {
           _id: createPost._id,
           title: createPost.title,
+          imageUrl: createPost.imageUrl,
           content: createPost.content,
           creator: createPost.creator,
           createdAt: createPost.createdAt
@@ -212,6 +228,7 @@ class Feed extends Component {
           // else if (prevState.posts.length < PAGE_SIZE) {
           // }
           else {
+            updatedPosts.pop();
             updatedPosts.unshift(post);
           }
 
@@ -326,7 +343,7 @@ class Feed extends Component {
                   author={post.creator.name}
                   date={new Date(post.createdAt).toLocaleDateString('en-US')}
                   title={post.title}
-                  image={post.imageUrl}
+                  image={`${REACT_APP_API_HOST}/images/${post.imageUrl}`}
                   content={post.content}
                   onStartEdit={this.startEditPostHandler.bind(this, post._id)}
                   canEdit={this.props.userId === post.creator._id}

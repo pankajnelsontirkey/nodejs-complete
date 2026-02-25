@@ -6,6 +6,7 @@ const User = require('../models/user');
 const Post = require('../models/post');
 const { JWT_SECRET } = require('../utils/constants');
 const { PAGE_SIZE } = require('../../frontend/src/util/constants');
+const { renameImage } = require('../controllers/feed');
 
 module.exports = {
   createUser: async ({ userInput }, _context) => {
@@ -94,6 +95,12 @@ module.exports = {
     const user = await User.findById(userId);
 
     const post = new Post({ title, content, imageUrl, creator: user });
+
+    const originalFilename = post.imageUrl.split('/')[1];
+    const newfilename = `${post._id.toString()}_${originalFilename}`;
+    post.imageUrl = newfilename;
+
+    renameImage(originalFilename, newfilename);
     const createdPost = await post.save();
 
     user.posts.push(createdPost);
@@ -106,7 +113,7 @@ module.exports = {
       updatedAt: createdPost.updatedAt.toISOString()
     };
   },
-  posts: async ({ page }, { req }) => {
+  fetchPosts: async ({ page }, { req }) => {
     const { isAuth, userId } = req;
 
     if (!isAuth) {

@@ -11,15 +11,17 @@ const { MONGODB_URL, PORT } = require('./utils/constants');
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolver');
 const auth = require('./middleware/auth.js');
+const { clearImage } = require('./controllers/feed.js');
 
 const app = express();
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'images');
+    cb(null, path.join(__dirname, 'images'));
   },
   filename: (req, file, cb) => {
-    cb(null, file.originalname + '-' + new Date().toISOString());
+    const newFilename = file.originalname;
+    cb(null, newFilename);
   }
 });
 
@@ -54,6 +56,23 @@ app.use((req, res, next) => {
 });
 
 app.use(auth);
+
+app.put('/upload-image', (req, res, next) => {
+  if (!req.isAuth) {
+    throw new Error('Not authenticated!');
+  }
+  if (!req.file) {
+    return res.status(200).json({ message: 'No image provided!' });
+  }
+
+  if (req.body.oldPath) {
+    clearImage(req.body.oldPath);
+  }
+
+  return res
+    .status(201)
+    .json({ message: 'Image saved.', filePath: req.file.path });
+});
 
 app.all('/graphql', (req, res) =>
   createHandler({

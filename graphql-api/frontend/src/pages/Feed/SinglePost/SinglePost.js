@@ -41,7 +41,7 @@ class SinglePost extends Component {
         this.setState({
           title: post.title,
           author: post.creator.name,
-          image: `${REACT_APP_API_HOST}/${post.imageUrl}`,
+          image: `${REACT_APP_API_HOST}/images/${post.imageUrl}`,
           date: new Date(post.createdAt).toLocaleDateString('en-US'),
           content: post.content
         });
