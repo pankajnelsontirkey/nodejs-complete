@@ -4,8 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
 const Post = require('../models/post');
-const { JWT_SECRET } = require('../utils/constants');
-const { PAGE_SIZE } = require('../../frontend/src/util/constants');
+const { JWT_SECRET, PAGE_SIZE } = require('../utils/constants');
 const { renameImage, clearImage } = require('../utils/file');
 
 module.exports = {
@@ -115,7 +114,7 @@ module.exports = {
       createdAt: createdPost.createdAt.toISOString()
     };
   },
-  fetchPosts: async ({ page }, { req }) => {
+  fetchPosts: async ({ page, pageSize = PAGE_SIZE }, { req }) => {
     const { isAuth, userId } = req;
 
     if (!isAuth) {
@@ -127,8 +126,8 @@ module.exports = {
     const totalPosts = await Post.find().countDocuments();
     const posts = await Post.find()
       .sort({ createdAt: -1 })
-      .skip(PAGE_SIZE * (page - 1))
-      .limit(PAGE_SIZE)
+      .skip(pageSize * (page - 1))
+      .limit(pageSize)
       .populate('creator');
 
     return {

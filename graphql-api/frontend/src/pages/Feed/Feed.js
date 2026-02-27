@@ -76,8 +76,8 @@ class Feed extends Component {
     }
 
     const graphqlQuery = {
-      query: `query FetchPosts($currentPage: Int) { fetchPosts(page: $currentPage) { posts { _id title content imageUrl creator { _id name } createdAt updatedAt } totalPosts } }`,
-      variables: { currentPage: page }
+      query: `query FetchPosts($currentPage: Int, $pageSize: Int) { fetchPosts(page: $currentPage, pageSize: $pageSize) { posts { _id title content imageUrl creator { _id name } createdAt updatedAt } totalPosts } }`,
+      variables: { currentPage: page, pageSize: PAGE_SIZE }
     };
 
     fetch(this.url, {
@@ -229,12 +229,14 @@ class Feed extends Component {
 
         this.setState((prevState) => {
           let updatedPosts = [...prevState.posts];
+          let updatedTotalPosts = prevState.totalPosts;
           if (prevState.editPost) {
             const postIndex = prevState.posts.findIndex(
               (p) => p._id === prevState.editPost._id
             );
             updatedPosts[postIndex] = post;
           } else {
+            updatedTotalPosts++;
             updatedPosts.unshift(post);
             if (updatedPosts.length > PAGE_SIZE) {
               updatedPosts.pop();
@@ -243,6 +245,7 @@ class Feed extends Component {
 
           return {
             posts: updatedPosts,
+            totalPosts: updatedTotalPosts,
             isEditing: false,
             editPost: null,
             editLoading: false
