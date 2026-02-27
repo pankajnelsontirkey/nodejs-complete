@@ -20,7 +20,7 @@ const fileStorage = multer.diskStorage({
     cb(null, path.join(__dirname, 'images'));
   },
   filename: (req, file, cb) => {
-    const newFilename = file.originalname;
+    const newFilename = `${Date.now().toString()}.${file.originalname.split('.')[1]}`;
     cb(null, newFilename);
   }
 });
@@ -71,7 +71,7 @@ app.put('/upload-image', (req, res, next) => {
 
   return res
     .status(201)
-    .json({ message: 'Image saved.', filePath: req.file.path });
+    .json({ message: 'Image saved.', filename: req.file.filename });
 });
 
 app.all('/graphql', (req, res) =>

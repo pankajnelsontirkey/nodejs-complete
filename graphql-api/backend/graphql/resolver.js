@@ -6,7 +6,7 @@ const User = require('../models/user');
 const Post = require('../models/post');
 const { JWT_SECRET } = require('../utils/constants');
 const { PAGE_SIZE } = require('../../frontend/src/util/constants');
-const { renameImage } = require('../controllers/feed');
+const { renameImage, clearImage } = require('../controllers/feed');
 
 module.exports = {
   createUser: async ({ userInput }, _context) => {
@@ -84,6 +84,9 @@ module.exports = {
     if (isEmpty(content) || !isLength(content, { min: 6 })) {
       errors.push({ message: 'Content is invalid.' });
     }
+    if (isEmpty(imageUrl)) {
+      errors.push({ message: 'Image URL is not valid' });
+    }
 
     if (errors?.length > 0) {
       const error = new Error('Invalid post details');
@@ -96,10 +99,10 @@ module.exports = {
 
     const post = new Post({ title, content, imageUrl, creator: user });
 
-    const originalFilename = post.imageUrl.split('/')[1];
+    const originalFilename = post.imageUrl;
     const newfilename = `${post._id.toString()}_${originalFilename}`;
-    post.imageUrl = newfilename;
 
+    post.imageUrl = newfilename;
     renameImage(originalFilename, newfilename);
     const createdPost = await post.save();
 
@@ -109,8 +112,7 @@ module.exports = {
     return {
       ...createdPost._doc,
       _id: createdPost._id.toString(),
-      createdAt: createdPost.createdAt.toISOString(),
-      updatedAt: createdPost.updatedAt.toISOString()
+      createdAt: createdPost.createdAt.toISOString()
     };
   },
   fetchPosts: async ({ page }, { req }) => {
@@ -202,5 +204,91 @@ module.exports = {
       createdAt: post.createdAt.toISOString(),
       updatedAt: post.updatedAt.toISOString()
     };
+  },
+  updatePost: async ({ postId, postInput }, { req }) => {
+    const { isAuth, userId } = req;
+
+    if (!isAuth) {
+      const error = new Error('Not authenticated!');
+      throw error;
+    }
+
+    const post = await Post.findById(postId).populate('creator');
+
+    if (!post) {
+      const error = new Error('Post not found');
+      error.code = 404;
+      throw error;
+    }
+
+    if (post.creator._id.toString() !== userId) {
+      const error = new Error('Not authorized!');
+      error.code = 403;
+      throw error;
+    }
+
+    const { title, content, imageUrl } = postInput;
+
+    const errors = [];
+    if (isEmpty(title) || !isLength(title, { min: 6 })) {
+      errors.push({ message: 'Title is invalid.' });
+    }
+    if (isEmpty(content) || !isLength(content, { min: 6 })) {
+      errors.push({ message: 'Content is invalid.' });
+    }
+
+    if (errors?.length > 0) {
+      const error = new Error('Invalid post details');
+      error.data = errors;
+      error.code = 422;
+      throw error;
+    }
+
+    post.title = title;
+    post.content = content;
+    if (imageUrl !== 'undefined') {
+      post.imageUrl = imageUrl;
+    }
+
+    const updatedPost = await post.save();
+
+    return {
+      ...updatedPost._doc,
+      _id: updatedPost._id.toString(),
+      createdAt: updatedPost.createdAt.toISOString(),
+      updatedAt: updatedPost.updatedAt.toISOString()
+    };
+  },
+
+  deletePost: async ({ postId }, { req }) => {
+    const { isAuth, userId } = req;
+
+    if (!isAuth) {
+      const error = new Error('Not authenticated!');
+      throw error;
+    }
+
+    const post = await Post.findById(postId).populate('creator');
+
+    if (!post) {
+      const error = new Error('Post not found');
+      error.code = 404;
+      throw error;
+    }
+
+    if (post.creator._id.toString() !== userId) {
+      const error = new Error('Not authorized!');
+      error.code = 403;
+      throw error;
+    }
+    const deleteResult = await post.deleteOne();
+
+    const imageUrl = post.imageUrl;
+
+    if (deleteResult.deletedCount) {
+      clearImage(imageUrl);
+    }
+
+    return post._id.toString();
   }
 };
