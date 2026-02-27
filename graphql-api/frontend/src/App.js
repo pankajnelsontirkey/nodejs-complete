@@ -64,7 +64,8 @@ class App extends Component {
     const { email, password } = authData;
 
     const graphqlQuery = {
-      query: `{ login(email: "${email}", password: "${password}") {token userId} }`
+      query: `query UserLogin($email: String!, $password: String!) { login(email: $email, password: $password) { token userId } }`,
+      variables: { email, password }
     };
 
     fetch(`${REACT_APP_API_HOST}/graphql`, {
@@ -113,7 +114,8 @@ class App extends Component {
     const name = signupForm.name.value;
 
     const graphqlQuery = {
-      query: `mutation { createUser(userInput: { email: "${email}", password: "${password}",  name: "${name}" }) { _id email } }`
+      query: `mutation UserSignup($signupData: UserInputData!) { createUser(userInput: $signupData) { _id email } }`,
+      variables: { signupData: { email, password, name } }
     };
 
     fetch(`${REACT_APP_API_HOST}/graphql`, {

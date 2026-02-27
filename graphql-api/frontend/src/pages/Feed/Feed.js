@@ -76,7 +76,8 @@ class Feed extends Component {
     }
 
     const graphqlQuery = {
-      query: `query { fetchPosts(page: ${page}) { posts { _id title content imageUrl creator { _id name } createdAt updatedAt } totalPosts } }`
+      query: `query FetchPosts($currentPage: Int) { fetchPosts(page: $currentPage) { posts { _id title content imageUrl creator { _id name } createdAt updatedAt } totalPosts } }`,
+      variables: { currentPage: page }
     };
 
     fetch(this.url, {
@@ -115,7 +116,8 @@ class Feed extends Component {
     event.preventDefault();
 
     const graphqlQuery = {
-      query: `mutation { updateStatus(statusText: "${this.state.status}") }`
+      query: `mutation UpdateUserStatus($userStatus String) { updateStatus(statusText: $userStatus) }`,
+      variables: { userStatus: this.state.status }
     };
 
     fetch(this.url, {
@@ -185,10 +187,19 @@ class Feed extends Component {
         const imageUrl = filename;
 
         const graphqlQuery = {
-          query: this.state.editPost
-            ? `mutation { updatePost(postId: "${this.state.editPost._id}", postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) `
-            : `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) ` +
-              `{ _id title content imageUrl creator { _id name } createdAt updatedAt } }`
+          query: `${
+            this.state.editPost
+              ? 'mutation UpdatePost($id: String!, $postData: PostInputData) { updatePost(postId: $id, postInput: $postData)'
+              : 'mutation CreateNewPost($postData: PostInputData!) { createPost(postInput: $postData)'
+          } { _id title content imageUrl creator { _id name } createdAt updatedAt } }`,
+          variables: {
+            postData: {
+              title: title,
+              content: content,
+              imageUrl: imageUrl ?? 'undefined'
+            },
+            id: this.state.editPost._id
+          }
         };
 
         return fetch(this.url, {
