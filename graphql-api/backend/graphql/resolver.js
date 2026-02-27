@@ -101,9 +101,9 @@ module.exports = {
 
     const originalFilename = post.imageUrl;
     const newfilename = `${post._id.toString()}_${originalFilename}`;
-
     post.imageUrl = newfilename;
     renameImage(originalFilename, newfilename);
+
     const createdPost = await post.save();
 
     user.posts.push(createdPost);
@@ -247,7 +247,11 @@ module.exports = {
     post.title = title;
     post.content = content;
     if (imageUrl !== 'undefined') {
-      post.imageUrl = imageUrl;
+      const originalFilename = imageUrl;
+      const newfilename = `${post._id.toString()}_${originalFilename}`;
+      renameImage(originalFilename, newfilename);
+
+      post.imageUrl = newfilename;
     }
 
     const updatedPost = await post.save();
@@ -259,7 +263,6 @@ module.exports = {
       updatedAt: updatedPost.updatedAt.toISOString()
     };
   },
-
   deletePost: async ({ postId }, { req }) => {
     const { isAuth, userId } = req;
 
