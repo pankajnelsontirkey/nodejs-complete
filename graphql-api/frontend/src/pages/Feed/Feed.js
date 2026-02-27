@@ -76,7 +76,7 @@ class Feed extends Component {
     }
 
     const graphqlQuery = {
-      query: `query { fetchPosts(page: ${page}) { posts { _id title content imageUrl creator { _id name } createdAt } totalPosts } }`
+      query: `query { fetchPosts(page: ${page}) { posts { _id title content imageUrl creator { _id name } createdAt updatedAt } totalPosts } }`
     };
 
     fetch(this.url, {
@@ -163,9 +163,7 @@ class Feed extends Component {
   };
 
   finishEditHandler = (postData) => {
-    this.setState({
-      editLoading: true
-    });
+    this.setState({ editLoading: true });
     const { title, content, image } = postData;
 
     const formData = new FormData();
@@ -183,12 +181,16 @@ class Feed extends Component {
       body: formData
     })
       .then((res) => res.json())
-      .then(({ filePath }) => {
-        const imageUrl = filePath;
+      .then(({ filename }) => {
+        const imageUrl = filename;
 
-        const graphqlQuery = {
-          query: `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) { _id title content imageUrl creator { name } createdAt } }`
-        };
+        const graphqlQuery = this.state.editPost
+          ? {
+              query: `mutation { updatePost(postId: "${this.state.editPost._id}", postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) { _id title content imageUrl creator { _id name } createdAt updatedAt } }`
+            }
+          : {
+              query: `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) { _id title content imageUrl creator { _id name } createdAt } }`
+            };
 
         return fetch(this.url, {
           method: this.method,
@@ -204,18 +206,16 @@ class Feed extends Component {
         if (resData?.errors?.length) {
           throw new Error(resData.errors[0].message);
         }
-
         const {
-          data: { createPost }
+          data: { createPost, updatePost }
         } = resData;
-        const post = {
-          _id: createPost._id,
-          title: createPost.title,
-          imageUrl: createPost.imageUrl,
-          content: createPost.content,
-          creator: createPost.creator,
-          createdAt: createPost.createdAt
-        };
+
+        const { _id, title, imageUrl, content, creator, createdAt } = this.state
+          .editPost
+          ? updatePost
+          : createPost;
+
+        const post = { _id, title, imageUrl, content, creator, createdAt };
 
         this.setState((prevState) => {
           let updatedPosts = [...prevState.posts];
@@ -224,12 +224,11 @@ class Feed extends Component {
               (p) => p._id === prevState.editPost._id
             );
             updatedPosts[postIndex] = post;
-          }
-          // else if (prevState.posts.length < PAGE_SIZE) {
-          // }
-          else {
-            updatedPosts.pop();
+          } else {
             updatedPosts.unshift(post);
+            if (updatedPosts.length > PAGE_SIZE) {
+              updatedPosts.pop();
+            }
           }
 
           return {
@@ -257,29 +256,32 @@ class Feed extends Component {
 
   deletePostHandler = (postId) => {
     this.setState({ postsLoading: true });
-    // let url = `${REACT_APP_API_HOST}/feed/post/${postId}`;
-    // let method = 'DELETE';
 
-    // fetch(url, {
-    //   method,
-    //   headers: { Authorization: `Bearer ${this.props.token}` }
-    // })
-    //   .then((res) => {
-    //     if (res.status !== 200 && res.status !== 201) {
-    //       throw new Error('Deleting a post failed!');
-    //     }
-    //     return res.json();
-    //   })
-    //   // .then((resData) => {
-    //   // this.setState((prevState) => {
-    //   //   const updatedPosts = prevState.posts.filter((p) => p._id !== postId);
-    //   //   return { posts: updatedPosts, postsLoading: false };
-    //   // });
-    //   // })
-    //   .catch((err) => {
-    //     console.log(err);
-    //     this.setState({ postsLoading: false });
-    //   });
+    const graphqlQuery = {
+      query: `mutation { deletePost(postId: "${postId}") }`
+    };
+
+    fetch(this.url, {
+      method: this.method,
+      headers: {
+        Authorization: `Bearer ${this.props.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(graphqlQuery)
+    })
+      .then((res) => res.json())
+      .then(({ data: { deletePost: deletedPostId } }) => {
+        this.setState((prevState) => {
+          const updatedPosts = prevState.posts.filter(
+            (p) => p._id !== deletedPostId
+          );
+          return { posts: updatedPosts, postsLoading: false };
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        this.setState({ postsLoading: false });
+      });
   };
 
   errorHandler = () => {

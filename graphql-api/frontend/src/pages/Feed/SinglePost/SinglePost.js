@@ -19,7 +19,7 @@ class SinglePost extends Component {
   componentDidMount() {
     const postId = this.props.match.params.postId;
     const graphqlQuery = {
-      query: `{ getPost(postId: "${postId}") { _id title content imageUrl creator { _id name } createdAt updatedAt } }`
+      query: `{ getPost(postId: "${postId}") { _id title content imageUrl creator { _id name } createdAt } }`
     };
 
     fetch(this.url, {
