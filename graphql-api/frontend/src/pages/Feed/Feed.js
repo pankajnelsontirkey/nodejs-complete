@@ -184,13 +184,12 @@ class Feed extends Component {
       .then(({ filename }) => {
         const imageUrl = filename;
 
-        const graphqlQuery = this.state.editPost
-          ? {
-              query: `mutation { updatePost(postId: "${this.state.editPost._id}", postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) { _id title content imageUrl creator { _id name } createdAt updatedAt } }`
-            }
-          : {
-              query: `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) { _id title content imageUrl creator { _id name } createdAt } }`
-            };
+        const graphqlQuery = {
+          query: this.state.editPost
+            ? `mutation { updatePost(postId: "${this.state.editPost._id}", postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) `
+            : `mutation { createPost(postInput: { title: "${title}" content: "${content}" imageUrl: "${imageUrl}"}) ` +
+              `{ _id title content imageUrl creator { _id name } createdAt updatedAt } }`
+        };
 
         return fetch(this.url, {
           method: this.method,

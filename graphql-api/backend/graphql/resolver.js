@@ -6,7 +6,7 @@ const User = require('../models/user');
 const Post = require('../models/post');
 const { JWT_SECRET } = require('../utils/constants');
 const { PAGE_SIZE } = require('../../frontend/src/util/constants');
-const { renameImage, clearImage } = require('../controllers/feed');
+const { renameImage, clearImage } = require('../utils/file');
 
 module.exports = {
   createUser: async ({ userInput }, _context) => {
@@ -164,11 +164,9 @@ module.exports = {
     }
 
     const errors = [];
-
     if (isEmpty(statusText) || !isLength(statusText, { min: 6 })) {
       errors.push('Text missing or invalid.');
     }
-
     if (errors.length > 0) {
       const error = new Error('Invalid status');
       error.data = errors;
@@ -177,6 +175,13 @@ module.exports = {
     }
 
     const user = await User.findById(userId);
+
+    if (!user) {
+      const error = new Error('User not found!');
+      error.code = 404;
+      throw error;
+    }
+
     user.status = statusText;
     await user.save();
     return user.status;
@@ -271,7 +276,7 @@ module.exports = {
       throw error;
     }
 
-    const post = await Post.findById(postId).populate('creator');
+    const post = await Post.findById(postId);
 
     if (!post) {
       const error = new Error('Post not found');
@@ -279,7 +284,7 @@ module.exports = {
       throw error;
     }
 
-    if (post.creator._id.toString() !== userId) {
+    if (post.creator.toString() !== userId.toString()) {
       const error = new Error('Not authorized!');
       error.code = 403;
       throw error;
@@ -290,6 +295,9 @@ module.exports = {
 
     if (deleteResult.deletedCount) {
       clearImage(imageUrl);
+      const user = await User.findById(userId);
+      user.posts.pull(postId);
+      await user.save();
     }
 
     return post._id.toString();

@@ -11,7 +11,7 @@ const { MONGODB_URL, PORT } = require('./utils/constants');
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolver');
 const auth = require('./middleware/auth.js');
-const { clearImage } = require('./controllers/feed.js');
+const { clearImage } = require('./utils/file.js');
 
 const app = express();
 
