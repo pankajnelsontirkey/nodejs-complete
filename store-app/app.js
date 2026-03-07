@@ -10,6 +10,7 @@ const multer = require('multer');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+// const https = require('https');
 
 const User = require('./models/user');
 const { shopRoutes } = require('./routes/shop');
@@ -31,6 +32,9 @@ const { csrfSynchronisedProtection } = csrfSync({
   getTokenFromRequest: (req) =>
     req.body['CSRFToken'] || req.headers('x-csrf-token')
 });
+
+// const privateKey = fs.readFileSync('server.key');
+// const certificate = fs.readFileSync('server.cert');
 
 const fileStorage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -139,6 +143,8 @@ app.use((err, req, res, next) => {
 mongoose
   .connect(MONGODB_URI, { dbName: MONGODB_DB_NAME })
   .then((result) => {
+    // https
+    //   .createServer({ key: privateKey, cert: certificate }, app)
     app.listen(PORT || 3000, () => {
       console.log('Server listening on port', PORT);
     });
