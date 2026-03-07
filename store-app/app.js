@@ -62,7 +62,7 @@ app.set('view engine', 'pug');
 app.set('views', 'views');
 
 const accessLogStream = fs.createWriteStream(
-  path.join(__dirname, 'access.log'),
+  path.join(__dirname, '/tmp/access.log'),
   { flags: 'a' }
 );
 
