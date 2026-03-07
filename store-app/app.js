@@ -151,4 +151,4 @@ mongoose
   })
   .catch((err) => console.log('mongoose.connect()', err));
 
-module.exports = app;
+export default app;
