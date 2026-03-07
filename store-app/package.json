@@ -3,9 +3,12 @@
   "version": "0.0.1",
   "description": "express server application",
   "main": "app.js",
+  "author": "pankajnelsontirkey",
+  "license": "MIT",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon --env-file=.env ./app.js --ignore data"
+    "start:dev": "nodemon --env-file=.env.local ./app.js --ignore data",
+    "start": "node ./app.js"
   },
   "keywords": [
     "simple",
@@ -15,14 +18,10 @@
     "with",
     "express-js"
   ],
-  "author": "pankajnelsontirkey",
-  "license": "MIT",
-  "devDependencies": {
-    "nodemon": "^3.1.9"
-  },
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "body-parser": "^2.2.1",
+    "compression": "^1.8.1",
     "connect-flash": "^0.1.1",
     "connect-mongodb-session": "^5.0.0",
     "csrf-sync": "^4.2.1",
@@ -31,13 +30,18 @@
     "express-handlebars": "^8.0.4",
     "express-session": "^1.18.2",
     "express-validator": "^7.3.1",
+    "helmet": "^8.1.0",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.1",
+    "morgan": "^1.10.1",
     "multer": "^2.1.1",
     "mysql2": "^3.14.4",
     "nodemailer": "^7.0.11",
     "pdfkit": "^0.17.2",
     "pug": "^3.0.3",
     "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
   }
 }
