@@ -87,7 +87,7 @@ app.use(
   })
 );
 app.use(compression());
-app.use(morgan('combined', { stream: accessLogStream }));
+app.use(morgan('combined' /* , { stream: accessLogStream } */));
 
 app.use(express.urlencoded({ extended: false }));
 app.use(multer({ storage: fileStorage, fileFilter }).single('image'));
