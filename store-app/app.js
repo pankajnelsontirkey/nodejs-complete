@@ -1,5 +1,5 @@
 const path = require('path');
-
+const fs = require('fs');
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -9,6 +9,7 @@ const flash = require('connect-flash');
 const multer = require('multer');
 const helmet = require('helmet');
 const compression = require('compression');
+const morgan = require('morgan');
 
 const User = require('./models/user');
 const { shopRoutes } = require('./routes/shop');
@@ -56,10 +57,10 @@ const fileFilter = (req, file, cb) => {
 app.set('view engine', 'pug');
 app.set('views', 'views');
 
-app.use(express.urlencoded({ extended: false }));
-app.use(multer({ storage: fileStorage, fileFilter }).single('image'));
-app.use(express.static(path.join(__dirname, 'public')));
-app.use('/data/images', express.static(path.join(__dirname, 'data/images')));
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, 'access.log'),
+  { flags: 'a' }
+);
 
 app.use(
   helmet.contentSecurityPolicy({
@@ -82,6 +83,12 @@ app.use(
   })
 );
 app.use(compression());
+app.use(morgan('combined', { stream: accessLogStream }));
+
+app.use(express.urlencoded({ extended: false }));
+app.use(multer({ storage: fileStorage, fileFilter }).single('image'));
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/data/images', express.static(path.join(__dirname, 'data/images')));
 
 app.use(
   session({
@@ -121,7 +128,6 @@ app.use((req, res, next) => {
 app.use('/manage', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
-
 app.use('/500', get500);
 app.use(get404);
 
