@@ -7,17 +7,23 @@ const MongoDBStore = require('connect-mongodb-session')(session);
 const { csrfSync } = require('csrf-sync');
 const flash = require('connect-flash');
 const multer = require('multer');
+const helmet = require('helmet');
+const compression = require('compression');
 
 const User = require('./models/user');
 const { shopRoutes } = require('./routes/shop');
 const { adminRoutes } = require('./routes/admin');
 const { authRoutes } = require('./routes/auth');
 const { get404, get500 } = require('./controllers/errors');
-
-const { MONGODB_URI, MONGODB_DB_NAME, PORT, SESSION_SECRET, CSRF_SECRET } =
-  process.env;
+const {
+  MONGODB_URI,
+  MONGODB_DB_NAME,
+  PORT,
+  SESSION_SECRET
+} = require('./util/constants');
 
 const app = express();
+
 const store = new MongoDBStore({ uri: MONGODB_URI, collection: 'sessions' });
 
 const { csrfSynchronisedProtection } = csrfSync({
@@ -54,6 +60,28 @@ app.use(express.urlencoded({ extended: false }));
 app.use(multer({ storage: fileStorage, fileFilter }).single('image'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/data/images', express.static(path.join(__dirname, 'data/images')));
+
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      'default-src': ["'self'"],
+      'script-src': ["'self'", "'unsafe-inline'"],
+      'style-src': [
+        "'self'",
+        "'unsafe-inline'",
+        'https://fonts.googleapis.com'
+      ],
+      'frame-src': ["'self'"],
+      'font-src': [
+        "'self'",
+        'https://fonts.googleapis.com',
+        'https://fonts.gstatic.com'
+      ]
+    }
+  })
+);
+app.use(compression());
 
 app.use(
   session({
@@ -105,7 +133,7 @@ app.use((err, req, res, next) => {
 mongoose
   .connect(MONGODB_URI, { dbName: MONGODB_DB_NAME })
   .then((result) => {
-    app.listen(PORT, () => {
+    app.listen(PORT || 3000, () => {
       console.log('Server listening on port', PORT);
     });
   })
