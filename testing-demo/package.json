@@ -4,13 +4,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha --color",
     "start": "nodemon src/app.js",
     "dev": "nodemon --env-file=.env.local src/app.js "
   },
   "repository": {
-    "type": "git",
-    "url": "https://git-codecommit.us-east-1.amazonaws.com/v1/repos/udemy-course-nodejs-complete"
+    "type": "git"
   },
   "author": "",
   "license": "ISC",
@@ -24,6 +23,8 @@
     "multer": "^2.1.1"
   },
   "devDependencies": {
+    "chai": "^6.2.2",
+    "mocha": "^11.7.5",
     "nodemon": "^3.1.14"
   }
 }
