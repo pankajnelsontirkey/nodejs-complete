@@ -1,5 +1,5 @@
 const express = require('express');
-const { body } = require('express-validator/check');
+const { query } = require('express-validator');
 
 const feedController = require('../controllers/feed');
 const isAuth = require('../middleware/is-auth');
@@ -14,12 +14,8 @@ router.post(
   '/post',
   isAuth,
   [
-    body('title')
-      .trim()
-      .isLength({ min: 5 }),
-    body('content')
-      .trim()
-      .isLength({ min: 5 })
+    query('title').trim().isLength({ min: 5 }),
+    query('content').trim().isLength({ min: 5 })
   ],
   feedController.createPost
 );
@@ -30,12 +26,8 @@ router.put(
   '/post/:postId',
   isAuth,
   [
-    body('title')
-      .trim()
-      .isLength({ min: 5 }),
-    body('content')
-      .trim()
-      .isLength({ min: 5 })
+    query('title').trim().isLength({ min: 5 }),
+    query('content').trim().isLength({ min: 5 })
   ],
   feedController.updatePost
 );

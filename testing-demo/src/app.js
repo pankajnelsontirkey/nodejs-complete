@@ -5,8 +5,9 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const multer = require('multer');
 
-const feedRoutes = require('./src/routes/feed');
-const authRoutes = require('./src/routes/auth');
+const feedRoutes = require('./routes/feed');
+const authRoutes = require('./routes/auth');
+const { MONGODB_URI, DB_NAME } = require('./constants');
 
 const app = express();
 
@@ -60,9 +61,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(
-    'mongodb+srv://maximilian:9u4biljMQc4jjqbe@cluster0-ntrwp.mongodb.net/messages?retryWrites=true'
-  )
+  .connect(`${MONGODB_URI}/${DB_NAME}`)
   .then((result) => {
     app.listen(8080);
   })

@@ -1,3 +1,5 @@
 const { MONGODB_URI } = process.env;
 
-module.exports = { MONGODB_URI };
+const DB_NAME = 'messages';
+
+module.exports = { MONGODB_URI, DB_NAME };
