@@ -1,13 +1,10 @@
 const fs = require('fs');
 
 const express = require('express');
+const handler = require('./handler');
 
 const app = express();
 
-app.get('/', (req, res, next) => {
-  fs.readFile('my-page.html', 'utf8', (err, data) => {
-    res.send(data);
-  });
-});
+app.get('/', handler);
 
 app.listen(3000);
