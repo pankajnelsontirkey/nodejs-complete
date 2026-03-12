@@ -1,7 +1,9 @@
-const fs = require('fs');
+// const express = require('express');
+import express from 'express';
 
-const express = require('express');
-const handler = require('./handler');
+// const handler = require('./handler');
+// import handler from './handler.js';
+import { handler } from './handler.js';
 
 const app = express();
 

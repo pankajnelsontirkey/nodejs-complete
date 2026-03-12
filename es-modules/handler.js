@@ -1,9 +1,9 @@
-const fs = require('fs');
+import fs from 'fs';
 
-const handler = (req, res, next) => {
+export const handler = (req, res, next) => {
   fs.readFile('my-page.html', 'utf8', (err, data) => {
     res.send(data);
   });
 };
 
-module.exports = handler;
+// export default handler;
