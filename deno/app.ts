@@ -1,8 +1,1 @@
-const text = 'This is a test - and it should be stored in a file!';
-
-const encoder = new TextEncoder();
-const data = encoder.encode(text);
-
-Deno.writeFile('message.txt', data).then(() => {
-  console.log('Saved to file');
-});
+Deno.serve({ port: 3000 }, () => new Response('Hello, world!'));
